@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EWIS Basic Quiz - 100 Questions</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    header {
+      background: #0b3d91;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.8rem; }
+    .quiz-info {
+      padding: 15px 20px;
+      background: #f0f7ff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+    .progress-container {
+      height: 8px;
+      background: #e0e0e0;
+      margin: 15px 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #0b3d91;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+    .question-container {
+      padding: 30px 40px;
+    }
+    .question-number {
+      font-size: 1.1rem;
+      color: #0b3d91;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .question-text {
+      font-size: 1.2rem;
+      margin-bottom: 25px;
+      color: #222;
+    }
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+    .option {
+      padding: 14px 18px;
+      background: #f9f9f9;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+    .option:hover {
+      background: #eef5ff;
+      border-color: #0b3d91;
+    }
+    .option.selected {
+      background: #0b3d91;
+      color: white;
+      border-color: #0b3d91;
+    }
+    .option.correct {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+    .option.wrong {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+    .feedback {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      display: none;
+    }
+    .feedback.correct { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .feedback.wrong { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px 40px;
+      background: #f8f9fa;
+      border-top: 1px solid #ddd;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #0b3d91; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #0a3278; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover { background: #218838; }
+    .result {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+    .result h2 { color: #0b3d91; margin-bottom: 15px; }
+    .score { font-size: 2rem; font-weight: bold; color: #28a745; }
+    @media (max-width: 600px) {
+      .question-container { padding: 20px; }
+      .navigation { flex-direction: column; gap: 10px; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>EWIS Basic Quiz</h1>
+      <p>100 Multiple Choice Questions | Aviation Maintenance Training</p>
+    </header>
+
+    <div class="quiz-info">
+      <span id="current-question">Question 1 of 100</span>
+      <span id="score-display">Score: 0 / 100</span>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="question-container">
+      <div class="question-number" id="question-number">Question 1</div>
+      <div class="question-text" id="question-text"></div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="navigation">
+      <button class="btn-primary" id="prev-btn" onclick="prevQuestion()">Previous</button>
+      <button class="btn-primary" id="next-btn" onclick="nextQuestion()">Next</button>
+      <button class="btn-success" id="submit-btn" onclick="submitAnswer()" style="display:none;">Check Answer</button>
+      <button class="btn-success" id="restart-btn" onclick="restartQuiz()" style="display:none; margin-left:auto;">Restart Quiz</button>
+    </div>
+
+    <div class="result" id="result">
+      <h2>Quiz Complete!</h2>
+      <div class="score" id="final-score">0 / 100</div>
+      <p id="result-message"></p>
+      <button class="btn-success" onclick="restartQuiz()">Try Again</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      { q: "What does EWIS stand for?", o: ["Electrical Wiring Interconnection System", "Emergency Warning and Intercommunication System", "East-West-Information Service"], a: 1 },
+      { q: "Caution in the maintenance manual is", o: ["Attentions must be followed or will damage to equipment", "Attentions must be followed or will show short way to do job", "Attentions must be followed or will injure to human being"], a: 1 },
+      { q: "How many primary factors associated with EWIS degradation?", o: ["10", "5", "7"], a: 1 },
+      { q: "Position between route EWIS and cables compare fluid lines?", o: ["route EWIS and cables above fluid lines", "fluid lines above route EWIS and cables", "route EWIS and cables same fluid lines"], a: 1 },
+      { q: "Generally, clamps should not be spaced at intervals exceeding?", o: ["24 inches", "12 inches", "18 inches"], a: 1 },
+      { q: "Normally, minimum bend radius for wire groups or bundles:", o: ["Must not less than 10 times the outside diameter of the largest wire or cable", "Equal 9 times the outside diameter of the largest wire or cable", "More than 5 times the outside diameter of the largest wire or cable"], a: 1 },
+      { q: "Bend radius for wire is suitably supported?", o: ["the radius may be 3 times the diameter of the wire or cable", "must not less than 10 times the outside diameter of the largest wire or cable", "must not less than 7 times the outside diameter of the largest wire or cable"], a: 1 },
+      { q: "Bend radius for thermocouple wire?", o: ["The radius for thermocouple wire is 20 times the diameter. (This is very delicate wire.)", "not less than 10 times the outside diameter of the largest wire or cable", "not less than 6 times the outside diameter of the largest wire or cable"], a: 1 },
+      { q: "Bend radius RF cables", o: ["no less than 6 times the outside diameter of the cable", "no less than 4 times the outside diameter of the cable", "no less than 5 times the outside diameter of the cable"], a: 1 },
+      { q: "Which one is the biggest?", o: ["wire gauge 20", "wire gauge 24", "wire gauge 22"], a: 1 },
+      { q: "What is the meaning of harness sagging?", o: ["Harness sagging is an increase in the length of the harness between two adjacent attachments that causes the harness to hang down too much.", "Harness sagging is a decrease in the length of the harness between two adjacent attachments that causes the harness to hang down too much.", "Harness sagging is an increase in the conductivity of the harness between two adjacent attachments that causes the harness to hang down too much."], a: 1 },
+      { q: "Which is not cause of sagging?", o: ["Possible loss of segregation.", "Wire damage because of chafing between the harness and the adjacent structure and/or equipment and/or wiring.", "Harness sagging is an increase in the length of the harness between two adjacent attachments that causes the harness to hang down too much."], a: 3 },
+      { q: "Which are not typical damages of the insulation, tongue, barrel, retaining sleeve and splice?", o: ["Corrosion, mechanical damage (cracks, etc.)", "Chemical contamination", "Harness sagging is an increase in the length of the harness between two adjacent attachments that causes the harness to hang down too much."], a: 3 },
+      { q: "Which is not correct for doing a visual check of connector locking?", o: ["Make sure you can see the color band.", "Make sure you can see the locking stub through the coupling nut.", "Make sure you can see the locking wire."], a: 1 },
+      { q: "The insulation has to be very _________ against to all kinds of fluids, mechanical strains, extreme temperature fluctuations.", o: ["Resistant", "Sensitive", "Reverse"], a: 1 },
+      { q: "What is the principle of thermocouple?", o: ["The thermocouple consists of two steel alloys soldered or welded together in which a minimal electrical potential is created when the wiring contact is heated which is proportional to the temperature.", "The thermocouple consists of two different metal alloys soldered or welded together in which a minimal electrical potential is created when the wiring contact is heated which is proportional to the temperature.", "The thermocouple consists of two different metal alloys separate together in which a minimal electrical potential is created when the wiring contact is heated which is proportional to the temperature."], a: 2 },
+      { q: "In accordance with Metric Wire Types what is the designate of the last number, for example CF 24 C FR A 91.", o: ["The year of manufacture", "The coating code", "Wire Gauge"], a: 3 },
+      { q: "What the repair grade is required permanent repair?", o: ["Grade 1", "Grade 0", "Grade 2"], a: 1 },
+      { q: "What is the best describe of Sensitive Wires?", o: ["These wires have pink sleeves with black printing at their ends, these wires are identified by the letter “S”", "These wires have red sleeves with yellow printing at their ends, these wires are identified by the letter “S”", "If repair work needs to be done, a test of the concerned system is recommended."], a: 1 },
+      { q: "The current capacity of wires is not directly dependent on:", o: ["Color of the insulation", "The conductor material", "The wire size"], a: 1 },
+      { q: "Shielding is the sheathing of wires and cables with an electrically conductive material in order to prevent", o: ["Leakage fields from either entering or escaping from wires and cables", "Electromagnetic fields from either entering or escaping from wires and cables", "Heat from either entering or escaping from wires and cables"], a: 2 },
+      { q: "What is the method used for joining wires and wide range of connectors to melt at a temperature of approx. 300 degrees Celsius.", o: ["Soft soldering", "Pressure connection", "Welding connection"], a: 1 },
+      { q: "What is the maximum angle may be bent for the connection of insulated terminals?", o: ["Only two and a maximum of 90 degrees on the even side and a maximum of 30 degrees on the side with the wire.", "Only once and a maximum of 90 degrees on the even side and a maximum of 60 degrees on the side with the wire.", "Only once and a maximum of 90 degrees on the even side and a maximum of 30 degrees on the side with the wire."], a: 3 },
+      { q: "Uninsulated and pre-insulated terminals can be bent", o: ["The bend radius is not greater than 5/32 inch ±1/32 inch", "The bend radius is not greater than 3/16 inch ±1/16 inch", "The bend radius is not greater than 3/8 inch ±1/8 inch"], a: 1 },
+      { q: "A white/blue insertion-extraction tool would be used on a cable of what size?", o: ["16", "10", "20"], a: 1 },
+      { q: "When manufacturing an electrical connector the unused hole are.", o: ["Filled with connectors", "Filled with connectors and blanked", "Covered with blanks"], a: 2 },
+      { q: "Most electric shocks from tools have been caused by:", o: ["The failure of insulation between the metal frame parts of tools", "The failure of insulation between the current-carrying parts and the metal frame parts of tools", "The failure of insulation between the insulation parts and the metal frame parts of tools"], a: 2 },
+      { q: "What is ESPM?", o: ["Electrical supplemental procedure manual", "Electrical standard practices manual", "Electrical supplemental practices manual"], a: 2 },
+      { q: "ARINC 429 Specification/ binary code decimal (BCD) – the binary code of 5 (decimal) is:", o: ["101", "11", "1001"], a: 1 },
+      { q: "What following is the result for ESD affect?", o: ["Relay are broken", "Wire are burnt or broken", "Integrated circuits are damaged"], a: 3 },
+      { q: "The voltage is measured", o: ["In parallel or in sequence to the circuit you like", "In parallel to the circuit", "In sequence to the circuit"], a: 2 },
+      { q: "When checking circuit breaker, relays, make sure that:", o: ["There is no sign of overheat", "They are correctly installed", "Both answers are correct"], a: 3 },
+      { q: "GFCIs are designed to", o: ["Operated after the electricity can affect your heartbeat", "Operate before the electricity can affect your breathing beat", "Operated before the electricity can affect your heartbeat"], a: 3 },
+      { q: "About the ARINC 429 specification", o: ["A message is composed of a 16 bit word", "A message is composed of a 64 bit word", "A message is composed of a 32 bit word"], a: 3 },
+      { q: "For an alternating current, the value indicated on the ammeter is", o: ["the effective current in one second", "the effective voltage in one cycle", "the effective current in one cycle"], a: 3 },
+      { q: "Color of extract tool:", o: ["White", "Red", "Green"], a: 2 },
+      { q: "When splicing a cable with a soldered joint, the operation is finished when.", o: ["the solder has melted.", "the solder and insulation have formed.", "the solder sleeve disappears."], a: 2 },
+      { q: "You want to clean a surface by agent, you do?", o: ["Apply agent then clean as usual", "Apply firstly agent to small area for test then clean if no serious reactions", "Dry the surface in the air"], a: 2 },
+      { q: "Route 1M is meaning:", o: ["Not safety route", "Sensitive route", "EFCS route"], a: 3 },
+      { q: "Why are copper wires used in electrical systems?", o: ["They have a low resistance to current.", "They have high permeability.", "They do not give off a magnetic field."], a: 1 },
+      { q: "The reason for cutting back properly a wire before crimping is to:", o: ["ensure that area of contact will not be oxidized", "keeps as short as possible wire length", "complies with ARINC specification"], a: 1 },
+      { q: "In a front release connector the pin will be.", o: ["released from the front and extracted from the front.", "released from the front and extracted from the rear.", "released from rear and extracted from the front."], a: 2 },
+      { q: "What is not acceptable when you do connector checking", o: ["There is no loosen connector or back shell", "Cable tie is missing", "Make sure there is locking wire"], a: 2 },
+      { q: "To test the electrical insulation, use", o: ["bond tester", "megohm-meters", "multimeter"], a: 2 },
+      { q: "The minimum distance between electrical cable splices is.", o: ["500 mm", "3 feet", "12 inches"], a: 1 },
+      { q: "When checking ground point, make sure that:", o: ["The ground equipment tightens to aircraft structure or avionic rack", "The protective coating is not damaged", "The ground equipment tightens to aircraft structure or avionic rack, the protective coating is not damaged, and no corrosion"], a: 3 },
+      { q: "About the ARINC 429 Specification", o: ["High bit rate and low bit rate messages can be intermixed on the same bus", "High bit rate and low bit rate messages cannot be intermixed on the same bus", "High bit rate and low bit rate messages cannot be intermixed on the difference bus"], a: 2 },
+      { q: "Before effecting a crimp, the bare ends of a cable should be.", o: ["tightly twisted", "twisted lightly in the direction of the lay", "straightened out"], a: 2 },
+      { q: "Repair for wire damage grade 0 is?", o: ["No repair required", "Permanent repair", "Minor repair"], a: 1 },
+      { q: "What gauge of pin would a blue plastic insert / extract tool be used on?", o: ["16 - 14.", "22 - 18.", "12 - 10."], a: 2 },
+      { q: "A hole is placed in the lowest point of electrical cable conduit.", o: ["to allow for pull-through of the cables.", "to allow for drainage of moisture.", "to secure the conduit to a piece of aircraft structure."], a: 2 },
+      { q: "For a direct current, the value indicated on the ammeter is:", o: ["Voltage", "Resistance", "Current"], a: 3 },
+      { q: "To find a high resistance or open circuit, carry out.", o: ["a milli-volt drop test", "a continuity check", "a bonding check"], a: 2 },
+      { q: "A voltmeter measures", o: ["The potential of one point", "The potential difference between two points", "The resistance difference between two points"], a: 2 },
+      { q: "What is GVI means?", o: ["General Variable Interconnection", "General Visual Inspection", "Ground Visual Inspection"], a: 2 },
+      { q: "The voltage is measured by connecting the voltmeter", o: ["In parallel or in sequence to the circuit if you like", "In parallel to the circuit", "In sequence to the circuit"], a: 2 },
+      { q: "To test crimping tool", o: ["Tool must be brought to national calibration center for test", "GO-NoGO tool must be used for test", "NoGO side must go through the crimping tool"], a: 2 },
+      { q: "What is ESD?", o: ["Sudden flow of electricity between two electrically charged objects caused by disconnection.", "A flow of electricity between two electrically charged objects caused by contact", "Sudden flow of electricity between two electrically charged objects caused by contact, an electrical short, or dielectric breakdown"], a: 3 },
+      { q: "Detail Inspection is:", o: ["Visual check of the system, powerplant or structure", "Full examination of a specific component", "Visual examination of an internal or external area"], a: 2 },
+      { q: "The maximum operating temperature for a nickel plated copper or aluminium connector is", o: ["135°C.", "260°C.", "200°C."], a: 2 },
+      { q: "An oscilloscope is easily the most useful instrument available for testing circuits because", o: ["by a graph of current against time", "It allows to see electrical signals at different points in the circuit", "by spectrum form"], a: 2 },
+      { q: "You want to clean a surface by agent, you do?", o: ["Dry the surface in the air", "Apply agent then clean as usual", "Apply firstly agent to small area for test then clean if no serious reactions"], a: 3 },
+      { q: "Circuit Breaker has auxiliary contact use for purpose:", o: ["Monitored", "Not monitored", "Back-up"], a: 1 },
+      { q: "About wire/cable identification, what does the first 4 digit (number) means?", o: ["No. of the wire/cable in the circuit", "No. of the circuit define by ATA Spec 100", "No. of the color code"], a: 2 },
+      { q: "Which statement is not correct about wire harness?", o: ["Dust and lint do not need to be collect", "Cable bend radius are not less than the minimum value necessary", "There is no loose harness or incorrectly attached harness"], a: 1 },
+      { q: "The acronym ARINC means:", o: ["Aeronautical Radio Incorporated.", "Aircraft Radar Incoming", "Aircraft Rack Inclusion"], a: 1 },
+      { q: "Examples of EWIS are:", o: ["Wires, cables, busbars, connectors", "Portable electrical devices", "Fiber optical cables"], a: 1 },
+      { q: "With a rear release connector, the pin will be.", o: ["released from the rear and extracted from the front.", "released from the front and extracted from the rear.", "released from the rear and extracted from the rear."], a: 3 },
+      { q: "Which tool use for bonding test", o: ["Milliohm meter", "Megaohm meter", "Voltmeter"], a: 1 },
+      { q: "Checking ground point", o: ["Must be tightened to aircraft structure", "The protective coating must not be damaged", "Must be tightened to aircraft structure, and protective coating is not damaged, and no corrosion"], a: 3 },
+      { q: "How many type of EWIS inspection?", o: ["2", "3", "4"], a: 3 },
+      { q: "A wire marks 2313-0035 on its body, 4 last digits bring what information?", o: ["Wire number", "Wire type", "Wire size"], a: 1 },
+      { q: "A wire has P/N ASBE0261CF24. Letters ‘CF’ mean?", o: ["Wire number", "Wire type", "Wire size"], a: 2 },
+      { q: "You want to clean a surface by cloth with liquid, you do?", o: ["Put cloth to the liquid", "Put the liquid to cloth", "Whatever above is ok provided efficiency"], a: 2 },
+      { q: "Which wire gauge has smallest section.", o: ["E0260BF24", "E0260BF20", "E0260BF18"], a: 1 },
+      { q: "Do you need to use special tool for GVI?", o: ["No needed", "Needed", "For clear defect, should use special tool"], a: 1 },
+      { q: "Which ATA chapter give EWIS inspection task", o: ["ATA 25.", "ATA 20.", "ATA 12."], a: 2 },
+      { q: "Which Tool does use for wiring isolation check", o: ["Megaohm meter", "Milliohm meter", "Volt meter"], a: 1 },
+      { q: "What is AWM?", o: ["Aircraft Wiring Manual", "Aircraft Working Menu", "Aircraft Wiring Modification"], a: 1 },
+      { q: "Which ones following are applicable in EPA for ESD prevention?", o: ["wrist strap, ESD jacket, anti-static bags, humid control, anti-static mat", "wrist strap, anti-static bags, humid control, anti-static mat", "wrist strap, ESD jacket, humid control, anti-static mat"], a: 2 },
+      { q: "How many ways to protect EWIS components during maintenance?", o: ["Plastic bag, protective cap, screened room", "Protective cap, screened room", "Plastic bag, dummy receptacle, protective cap"], a: 3 },
+      { q: "For the dry human skin, the resistance could be", o: ["Less than 1000 ohms", "Over 500,000 ohms", "Only 100 ohms"], a: 2 },
+      { q: "If you let a current more than 50 miliamps goes through you, you will", o: ["Get severe pains", "Can’t let go", "Probable fatal"], a: 3 },
+      { q: "Where could we set up an EPA?", o: ["Small work station", "Large manufacturing area", "Either small work station or large manufacturing area"], a: 3 },
+      { q: "If the wire repairing is grade 3, we have to perform", o: ["Tempo repair only and must not stay on aircraft more than 24months", "Permanent repair", "A regular check of repair is necessary at intervals that must not be more than 24 months"], a: 2 },
+      { q: "How many repair grade for cable", o: ["3", "4", "5"], a: 2 },
+      { q: "What is additional check when replacement LRU?", o: ["This is the check by reading LRU P/N from OBRM whether it matches with P/N in front face or not", "This is the check LRU P/N", "This is the extra check LRU after replacement for operation/functional test"], a: 3 },
+      { q: "Which document for repair or replacement of damaged engine cables", o: ["AMM 70-71", "ESPM 20-53", "ESPM 20-46"], a: 2 },
+      { q: "To do the electrical bonding ref:", o: ["AMM 20-28", "CMM 20-21", "ESPM 20-48"], a: 1 },
+      { q: "How many splice permitted for damaged repair on the same wire.", o: ["Not more three slices", "Only one splice", "No required"], a: 2 },
+      { q: "Advanced Training Manual Which item are NOT EWIS:", o: ["bus bars, connectors", "Coaxial cables", "Portable electrical devices"], a: 3 },
+      { q: "In EWIS Symbol \"~\" is:", o: ["alternating current", "direct current", "earth ground"], a: 1 },
+      { q: "Testing the continuity of a circuit requires use the", o: ["an oscilloscope.", "a multimeter", "a bond tester"], a: 2 },
+      { q: "In EWIS, maximum terminal lug should be connected to any one stud are", o: ["four", "three", "two"], a: 1 },
+      { q: "What is the root cause 1 of the IR 8-2020-S?", o: ["CRS did not perform the job carefully ,HE was subjective on evaluation the alighnment position of connector", "Two CRS did not brifeing together", "human factor"], a: 1 },
+      { q: "Which wire size is the smallest wire?", o: ["20", "18", "22"], a: 3 },
+      { q: "In accordance with Ohm’s law,the value resistance is equal to", o: ["the multiplication of the voltage across the resistor and current passing through the resistor", "the division of the voltage across the resistor and current passing through the resistor", "the division of the current passing through the resistor and the voltage across the resistor"], a: 2 },
+      { q: "Which corrective action of IR 8-2020/IR-S", o: ["Nothing", "The damage contactor was replaced by the New one", "The damage contactor was replaced by the new one and returned to Unserviceable store as unserviceable component"], a: 3 },
+      { q: "Wiring Loom support prevent?", o: ["kinking", "denting", "chafing"], a: 3 },
+      { q: "before bonding /grouding is perform by", o: ["rinsing the suface with clean water", "scraping the metal surface to remove possible oxidization", "degreasing, removing paint or lacquer and brushing the surface"], a: 3 },
+      { q: "About system safety,EWIS must be designed and installed so that", o: ["Each catastrophic failyre condition is extremely probable", "Each catastrophic failure condition is extremely improbable", "Each catastrophic failure condition is result from a single failure"], a: 2 },
+      { q: "Tripped Circuit Breaker can be reset:", o: ["at any time for maintenance and troubleshooting purpose", "only when you know the cause for the tripped circuit breaker and that the circuit breaker can be safety reset", "whenever you can not determine the cause for the tripped circuit breaker"], a: 2 },
+      { q: "Which one following relates detail inpection the wire bundles?", o: ["pull on the wire bundles, shake wire bundles", "disconnect the connectors.", "remove panels as nessessary to gain access to the wiring"], a: 3 },
+      { q: "What is the most common cause of wire bundle and wire component degradation?", o: ["Paint", "Hydraulic fluid", "Cleaning Agents"], a: 2 },
+      { q: "The Airplane STCs (supplymental Tyepe Certificates)concerned by subsequent EWIS anasysis are:", o: ["All STCs", "STCs published before the amendment 5 of the CS-25", "STCs published since the EWIS requirement have been issued"], a: 2 },
+      { q: "In AMC 20-23 the acrorym ESWPM means", o: ["Electrical Standard Wiring Procedures Manual", "Electrical Standard Wiring Practices Manual", "Electrical Standard Wiring Protection Manual"], a: 2 },
+      { q: "Relate to wiring deterioration limits ,the ESWPM specifies which one following ?", o: ["appropriated AMM chapter references.", "inspection’s interval for identifyring when the wire must be removed and replaced", "deterioration’s threshold from which the wire must be removed and replaced"], a: 3 },
+      { q: "Zonal inspection is primarily a zone GVI crried out to detect :", o: ["irregularity", "obvious noncomplinance", "detail damages and malfunctions"], a: 2 },
+      { q: "Sources cause Electrostatic discarge (ESD)?", o: ["Friction,tribo-charge", "Contacts", "Induction,tribocharge,contacts"], a: 3 },
+      { q: "What the following is the result by Electrostactic discharge (ESD) effect?", o: ["Intergrated Circuits are damaged", "Contactors are Broken", "Wires are burnt or broken"], a: 1 },
+      { q: "How many Type failure ESD?", o: ["3 types", "2 types", "4 types"], a: 1 },
+      { q: "When working with EWIS system,Which one is correct?", o: ["No electrical source is connected to the aircaft electrical", "obey safety for human live by isolation from ground electrical source may connect but associated C/B must be isolated from circuit", "No electrical source is connected to the aircaft electrical"], a: 1 },
+      { q: "Which root cause of the damage at connector of IR 41-2020/IR-H", o: ["The tools were not used", "Human factor", "Safety equipment unavailable"], a: 2 },
+      { q: "When using a digital meter to test a diode, a correct operation of the diode is indicated by a volt drop of.", o: ["0.3V to 0.7V.", "2.5V to 2.8V.", "1.5V to 2V."], a: 1 },
+      { q: "Continuity of a fibre optic cable is tested with a.", o: ["Light source and optometer.", "Multimeter.", "Calibrated light generator and opto-power meter."], a: 3 },
+      { q: "This electrical symbol represents a.", o: ["Push to reset circuit breaker.", "Push-pull circuit breaker.", "Toggle switch circuit breaker."], a: 2 },
+      { q: "This is a diagram of.", o: ["A voltage regulator.", "A potentiometer.", "A voltage divider."], a: 2 },
+      { q: "Clean and protect is:", o: ["Proactive maintenance.", "Reactive maintenance.", "Predictive maintenance."], a: 1 },
+      { q: "Which one follwing is the main cause for lethality?", o: ["voltage", "current", "resistance"], a: 2 }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let selectedAnswer = null;
+    let answers = new Array(questions.length).fill(null);
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      document.getElementById("question-number").textContent = `Question ${currentQuestion + 1}`;
+      document.getElementById("question-text").textContent = q.q;
+      document.getElementById("current-question").textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+      
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+      q.o.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.className = "option";
+        div.textContent = opt;
+        div.onclick = () => selectOption(i + 1, div);
+        if (answers[currentQuestion] === i + 1) {
+          div.classList.add(answers[currentQuestion] === q.a ? "correct" : "wrong");
+        }
+        optionsDiv.appendChild(div);
+      });
+
+      document.getElementById("feedback").style.display = "none";
+      document.getElementById("submit-btn").style.display = answers[currentQuestion] ? "none" : "inline-block";
+      document.getElementById("prev-btn").disabled = currentQuestion === 0;
+      document.getElementById("next-btn").textContent = currentQuestion === questions.length - 1 ? "Finish" : "Next";
+
+      updateProgress();
+      updateScore();
+    }
+
+    function selectOption(choice, element) {
+      if (answers[currentQuestion]) return;
+      selectedAnswer = choice;
+      document.querySelectorAll(".option").forEach(opt => opt.classList.remove("selected"));
+      element.classList.add("selected");
+      document.getElementById("submit-btn").style.display = "inline-block";
+    }
+
+    function submitAnswer() {
+      if (!selectedAnswer) return;
+      answers[currentQuestion] = selectedAnswer;
+      const q = questions[currentQuestion];
+      const feedback = document.getElementById("feedback");
+      const correct = selectedAnswer === q.a;
+      if (correct) score++;
+
+      feedback.textContent = correct 
+        ? "Correct! Well done." 
+        : `Wrong. The correct answer is: ${q.o[q.a - 1]}`;
+      feedback.className = `feedback ${correct ? "correct" : "wrong"}`;
+      feedback.style.display = "block";
+
+      document.querySelectorAll(".option").forEach((opt, i) => {
+        if (i + 1 === q.a) opt.classList.add("correct");
+        else if (i + 1 === selectedAnswer && !correct) opt.classList.add("wrong");
+      });
+
+      document.getElementById("submit-btn").style.display = "none";
+      updateScore();
+    }
+
+    function nextQuestion() {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        selectedAnswer = null;
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        selectedAnswer = answers[currentQuestion];
+        loadQuestion();
+      }
+    }
+
+    function updateProgress() {
+      const percent = ((currentQuestion + 1) / questions.length) * 100;
+      document.getElementById("progress-bar").style.width = percent + "%";
+    }
+
+    function updateScore() {
+      document.getElementById("score-display").textContent = `Score: ${score} / ${questions.length}`;
+    }
+
+    function showResult() {
+      document.querySelector(".question-container").style.display = "none";
+      document.querySelector(".navigation").style.display = "none";
+      const result = document.getElementById("result");
+      result.style.display = "block";
+      document.getElementById("final-score").textContent = `${score} / ${questions.length}`;
+      const percent = (score / questions.length) * 100;
+      document.getElementById("result-message").textContent = 
+        percent >= 90 ? "Outstanding! You're an EWIS expert!" :
+        percent >= 70 ? "Great job! Keep practicing." :
+        percent >= 50 ? "Not bad. Review and try again." :
+        "Keep studying! You'll get there.";
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      selectedAnswer = null;
+      answers.fill(null);
+      document.querySelector(".question-container").style.display = "block";
+      document.querySelector(".navigation").style.display = "flex";
+      document.getElementById("result").style.display = "none";
+      document.getElementById("restart-btn").style.display = "none";
+      loadQuestion();
+    }
+
+    // Start quiz
+    loadQuestion();
+  </script>
+</body>
+</html>
