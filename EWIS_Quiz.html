@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EWIS Basic Quiz - 100 Questions</title>
+  <title>EWIS Basic Quiz - Instant Feedback</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -141,7 +141,7 @@
   <div class="container">
     <header>
       <h1>EWIS Basic Quiz</h1>
-      <p>100 Multiple Choice Questions | Aviation Maintenance Training</p>
+      <p>100 Questions | Instant Feedback | Vietnam Training</p>
     </header>
 
     <div class="quiz-info">
@@ -163,7 +163,6 @@
     <div class="navigation">
       <button class="btn-primary" id="prev-btn" onclick="prevQuestion()">Previous</button>
       <button class="btn-primary" id="next-btn" onclick="nextQuestion()">Next</button>
-      <button class="btn-success" id="submit-btn" onclick="submitAnswer()" style="display:none;">Check Answer</button>
       <button class="btn-success" id="restart-btn" onclick="restartQuiz()" style="display:none; margin-left:auto;">Restart Quiz</button>
     </div>
 
@@ -300,7 +299,6 @@
 
     let currentQuestion = 0;
     let score = 0;
-    let selectedAnswer = null;
     let answers = new Array(questions.length).fill(null);
 
     function loadQuestion() {
@@ -308,7 +306,7 @@
       document.getElementById("question-number").textContent = `Question ${currentQuestion + 1}`;
       document.getElementById("question-text").textContent = q.q;
       document.getElementById("current-question").textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
-      
+
       const optionsDiv = document.getElementById("options");
       optionsDiv.innerHTML = "";
       q.o.forEach((opt, i) => {
@@ -322,8 +320,9 @@
         optionsDiv.appendChild(div);
       });
 
-      document.getElementById("feedback").style.display = "none";
-      document.getElementById("submit-btn").style.display = answers[currentQuestion] ? "none" : "inline-block";
+      const feedback = document.getElementById("feedback");
+      feedback.style.display = "none";
+
       document.getElementById("prev-btn").disabled = currentQuestion === 0;
       document.getElementById("next-btn").textContent = currentQuestion === questions.length - 1 ? "Finish" : "Next";
 
@@ -332,40 +331,33 @@
     }
 
     function selectOption(choice, element) {
-      if (answers[currentQuestion]) return;
-      selectedAnswer = choice;
-      document.querySelectorAll(".option").forEach(opt => opt.classList.remove("selected"));
-      element.classList.add("selected");
-      document.getElementById("submit-btn").style.display = "inline-block";
-    }
+      if (answers[currentQuestion] !== null) return; // Prevent changing answer
 
-    function submitAnswer() {
-      if (!selectedAnswer) return;
-      answers[currentQuestion] = selectedAnswer;
+      answers[currentQuestion] = choice;
       const q = questions[currentQuestion];
-      const feedback = document.getElementById("feedback");
-      const correct = selectedAnswer === q.a;
+      const correct = choice === q.a;
       if (correct) score++;
 
+      // Show feedback
+      const feedback = document.getElementById("feedback");
       feedback.textContent = correct 
-        ? "Correct! Well done." 
-        : `Wrong. The correct answer is: ${q.o[q.a - 1]}`;
+        ? "Correct!" 
+        : `Wrong. Correct answer: ${q.o[q.a - 1]}`;
       feedback.className = `feedback ${correct ? "correct" : "wrong"}`;
       feedback.style.display = "block";
 
+      // Highlight options
       document.querySelectorAll(".option").forEach((opt, i) => {
         if (i + 1 === q.a) opt.classList.add("correct");
-        else if (i + 1 === selectedAnswer && !correct) opt.classList.add("wrong");
+        else if (i + 1 === choice && !correct) opt.classList.add("wrong");
       });
 
-      document.getElementById("submit-btn").style.display = "none";
       updateScore();
     }
 
     function nextQuestion() {
       if (currentQuestion < questions.length - 1) {
         currentQuestion++;
-        selectedAnswer = null;
         loadQuestion();
       } else {
         showResult();
@@ -375,7 +367,6 @@
     function prevQuestion() {
       if (currentQuestion > 0) {
         currentQuestion--;
-        selectedAnswer = answers[currentQuestion];
         loadQuestion();
       }
     }
@@ -397,16 +388,15 @@
       document.getElementById("final-score").textContent = `${score} / ${questions.length}`;
       const percent = (score / questions.length) * 100;
       document.getElementById("result-message").textContent = 
-        percent >= 90 ? "Outstanding! You're an EWIS expert!" :
-        percent >= 70 ? "Great job! Keep practicing." :
-        percent >= 50 ? "Not bad. Review and try again." :
-        "Keep studying! You'll get there.";
+        percent >= 90 ? "Outstanding! EWIS Expert!" :
+        percent >= 70 ? "Great job! Keep going!" :
+        percent >= 50 ? "Not bad. Review weak areas." :
+        "Keep studying! You can do it!";
     }
 
     function restartQuiz() {
       currentQuestion = 0;
       score = 0;
-      selectedAnswer = null;
       answers.fill(null);
       document.querySelector(".question-container").style.display = "block";
       document.querySelector(".navigation").style.display = "flex";
@@ -415,7 +405,7 @@
       loadQuestion();
     }
 
-    // Start quiz
+    // Start
     loadQuestion();
   </script>
 </body>
